@@ -297,6 +297,8 @@ export default function SlowedReverbStudio() {
   const [roomType, setRoomType] = useState<RoomType>("cathedral");
   const [eqOn, setEqOn] = useState(true);
   const [wideningOn, setWideningOn] = useState(true);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(1.35);
+  const [isDragging, setIsDragging] = useState(false);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
@@ -403,7 +405,7 @@ export default function SlowedReverbStudio() {
         source.buffer = audioBuffer;
         source.playbackRate.value = effectiveRate;
 
-        const chain = buildProcessingChain(ctx, source, { reverbAmount, roomType, eqOn, wideningOn });
+        const chain = buildProcessingChain(ctx, source, { reverbAmount: reverbAmount * 0.5, roomType, eqOn, wideningOn });
         chainRef.current = chain;
 
         const analyser = ctx.createAnalyser();
@@ -595,7 +597,7 @@ export default function SlowedReverbStudio() {
       const source = offlineCtx.createBufferSource();
       source.buffer = audioBuffer;
       source.playbackRate.value = effectiveRate;
-      const chain = buildProcessingChain(offlineCtx, source, { reverbAmount, roomType, eqOn, wideningOn });
+      const chain = buildProcessingChain(offlineCtx, source, { reverbAmount: reverbAmount * 0.5, roomType, eqOn, wideningOn });
       chain.output.connect(offlineCtx.destination);
       source.start();
       const rendered = await offlineCtx.startRendering();
@@ -645,7 +647,7 @@ export default function SlowedReverbStudio() {
       off.playbackRate = effectiveRate;
 
       const source = ctx.createMediaElementSource(off);
-      const chain = buildProcessingChain(ctx, source, { reverbAmount, roomType, eqOn, wideningOn });
+      const chain = buildProcessingChain(ctx, source, { reverbAmount: reverbAmount * 0.5, roomType, eqOn, wideningOn });
       const streamDest = ctx.createMediaStreamDestination();
       chain.output.connect(streamDest);
 
@@ -702,6 +704,27 @@ export default function SlowedReverbStudio() {
       setVideoRenderProgress(0);
     }
   }, [videoUrl, audioBuffer, stretchFactor, effectiveRate, reverbAmount, roomType, eqOn, wideningOn, fileName, ensureContext]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const container = document.querySelector(".grid-container") as HTMLElement;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const newWidth = (e.clientX - rect.left) / rect.width;
+      // Constrain between 0.6 and 2.0 ratio
+      setLeftPanelWidth(Math.max(0.6, Math.min(2.0, newWidth)));
+    };
+    const handleMouseUp = () => setIsDragging(false);
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [isDragging]);
 
   useEffect(() => {
     return () => {
@@ -762,12 +785,27 @@ export default function SlowedReverbStudio() {
           <Music2 size={22} style={{ color: COLOR.stone }} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-5">
+        <div
+          className="grid-container gap-5"
+          style={{
+            display: "grid",
+            gridTemplateColumns: `${leftPanelWidth}fr 1fr`,
+          }}
+        >
           {/* Hero: drape visualization */}
           <div
-            className="rounded-2xl p-4 sm:p-5 relative overflow-hidden"
+            className="rounded-2xl p-4 sm:p-5 relative overflow-hidden group"
             style={{ background: COLOR.tarp, border: `1px solid ${COLOR.stoneDark}` }}
           >
+            {/* Resize handle */}
+            <div
+              onMouseDown={() => setIsDragging(true)}
+              className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:w-1.5 transition-all opacity-0 group-hover:opacity-100"
+              style={{
+                background: `linear-gradient(to bottom, ${COLOR.brass}, ${COLOR.brassLight}, transparent)`,
+                zIndex: 10,
+              }}
+            />
             <DrapeCanvas
               peaks={displayPeaks}
               slowFactor={slowFactor}
