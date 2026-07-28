@@ -297,8 +297,6 @@ export default function SlowedReverbStudio() {
   const [roomType, setRoomType] = useState<RoomType>("cathedral");
   const [eqOn, setEqOn] = useState(true);
   const [wideningOn, setWideningOn] = useState(true);
-  const [leftPanelWidth, setLeftPanelWidth] = useState(1.35);
-  const [isDragging, setIsDragging] = useState(false);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
@@ -706,27 +704,6 @@ export default function SlowedReverbStudio() {
   }, [videoUrl, audioBuffer, stretchFactor, effectiveRate, reverbAmount, roomType, eqOn, wideningOn, fileName, ensureContext]);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const container = document.querySelector(".grid-container") as HTMLElement;
-      if (!container) return;
-      const rect = container.getBoundingClientRect();
-      const newWidth = (e.clientX - rect.left) / rect.width;
-      // Constrain between 0.6 and 2.0 ratio
-      setLeftPanelWidth(Math.max(0.6, Math.min(2.0, newWidth)));
-    };
-    const handleMouseUp = () => setIsDragging(false);
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      return () => {
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-      };
-    }
-  }, [isDragging]);
-
-  useEffect(() => {
     return () => {
       stopSource();
       audioCtxRef.current?.close().catch(() => {});
@@ -764,7 +741,7 @@ export default function SlowedReverbStudio() {
 
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="flex gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLOR.brass }} />
@@ -772,7 +749,7 @@ export default function SlowedReverbStudio() {
             </div>
             <div>
               <h1
-                className="font-display uppercase tracking-wide text-xl sm:text-2xl"
+                className="font-display uppercase tracking-wide text-xl sm:text-2xl break-words"
                 style={{ color: COLOR.beigeLight, letterSpacing: "0.04em" }}
               >
                 Slowed &amp; Reverbed
@@ -782,30 +759,21 @@ export default function SlowedReverbStudio() {
               </p>
             </div>
           </div>
-          <Music2 size={22} style={{ color: COLOR.stone }} />
+          <Music2 size={22} style={{ color: COLOR.stone, flexShrink: 0 }} />
         </div>
 
         <div
-          className="grid-container gap-5"
+          className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-5"
           style={{
             display: "grid",
-            gridTemplateColumns: `${leftPanelWidth}fr 1fr`,
+            gridTemplateColumns: "1.35fr 1fr",
           }}
         >
           {/* Hero: drape visualization */}
           <div
-            className="rounded-2xl p-4 sm:p-5 relative overflow-hidden group"
+            className="rounded-2xl p-4 sm:p-5 relative overflow-hidden"
             style={{ background: COLOR.tarp, border: `1px solid ${COLOR.stoneDark}` }}
           >
-            {/* Resize handle */}
-            <div
-              onMouseDown={() => setIsDragging(true)}
-              className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:w-1.5 transition-all opacity-0 group-hover:opacity-100"
-              style={{
-                background: `linear-gradient(to bottom, ${COLOR.brass}, ${COLOR.brassLight}, transparent)`,
-                zIndex: 10,
-              }}
-            />
             <DrapeCanvas
               peaks={displayPeaks}
               slowFactor={slowFactor}
@@ -907,22 +875,6 @@ export default function SlowedReverbStudio() {
                 <p className="font-tag text-[11px] mt-1 leading-snug" style={{ color: COLOR.rust }}>
                   {loadError}
                 </p>
-              )}
-              {mediaType === "video" && videoUrl && (
-                <video
-                  src={videoUrl}
-                  muted
-                  playsInline
-                  className="w-full rounded-lg mt-2.5"
-                  style={{ border: `1px solid ${COLOR.stone}`, maxHeight: 130, objectFit: "cover" }}
-                  onLoadedData={(e) => {
-                    try {
-                      e.currentTarget.currentTime = 0.05;
-                    } catch {
-                      /* ignore */
-                    }
-                  }}
-                />
               )}
             </div>
 
