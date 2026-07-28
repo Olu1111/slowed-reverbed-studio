@@ -749,7 +749,7 @@ export default function SlowedReverbStudio() {
             </div>
             <div>
               <h1
-                className="font-display uppercase tracking-wide text-xl sm:text-2xl break-words"
+                className="font-display uppercase tracking-wide text-xl sm:text-2xl"
                 style={{ color: COLOR.beigeLight, letterSpacing: "0.04em" }}
               >
                 Slowed &amp; Reverbed
@@ -868,7 +868,7 @@ export default function SlowedReverbStudio() {
                 {isDecoding ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                 {isDecoding ? "Loading…" : "Load audio or recording"}
               </button>
-              <p className="font-tag text-[11px] mt-1.5 truncate" style={{ color: COLOR.stoneDark }}>
+              <p className="font-tag text-[11px] mt-1.5" style={{ color: COLOR.stoneDark, maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                 {fileName ? `${fileName}${mediaType === "video" ? " · screen recording" : ""}` : "No file loaded"}
               </p>
               {loadError && (
